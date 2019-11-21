@@ -1,12 +1,11 @@
 package authgoogle
 
 import (
-	"Liature/mainServer/server"
+	"Liature-Server/serversession"
 	"log"
 	"net/http"
 
 	sessions "github.com/goincremental/negroni-sessions"
-	"github.com/julienschmidt/httprouter"
 	"github.com/stretchr/gomniauth"
 	"github.com/stretchr/gomniauth/providers/google"
 	"github.com/stretchr/objx"
@@ -21,14 +20,12 @@ func init() {
 	// gomniauth 정보 세팅
 	gomniauth.SetSecurityKey(authSecurityKey)
 	gomniauth.WithProviders(
-		google.New("636296155193-a9abes4mc1p81752l116qkr9do6oev3f.apps.googleusercontent.com", "EVvuy0Agv4jWflml0pvC6-vI", "http://127.0.0.1:3000/auth/callback/google"),
+		google.New("476773135653-1m6k8n8v6b7lu718nk5s3jp2bc79l72k.apps.googleusercontent.com", "1h7278fFvMdmCIDsEy8CtLWX", "http://127.0.0.1:3000/auth/callback/google"),
 	)
 }
 
 // AuthGoogle 함수는 구글 소셜 로그인 작업을 수행합니다.
-func AuthGoogle(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	action := ps.ByName("action")
-	provider := ps.ByName("provider")
+func AuthGoogle(w http.ResponseWriter, r *http.Request, action string, provider string) {
 	s := sessions.GetSession(r)
 
 	switch action {
@@ -64,14 +61,14 @@ func AuthGoogle(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			log.Fatalln(err)
 		}
 
-		u := &server.SessionUser{
-			Uid:       user.Data().Get("id").MustStr(),
+		u := &serversession.SessionUser{
+			UID:       user.Data().Get("id").MustStr(),
 			Name:      user.Name(),
 			Email:     user.Email(),
-			AvatarUrl: user.AvatarURL(),
+			AvatarURL: user.AvatarURL(),
 		}
 
-		SetCurrentUser(r, u)
+		serversession.SetCurrentUser(r, u)
 		http.Redirect(w, r, s.Get(nextPageKey).(string), http.StatusFound)
 	default:
 		http.Error(w, "Auth action '"+action+"' is not supported", http.StatusNotFound)
