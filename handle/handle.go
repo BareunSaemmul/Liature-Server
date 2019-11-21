@@ -2,7 +2,6 @@ package handle
 
 import (
 	"Liature-Server/db"
-	"Liature-Server/room"
 	"fmt"
 	"os"
 
@@ -24,18 +23,6 @@ var currentUserLocal string
 func init() {
 	currentUserLocal = "대전"
 	renderer = render.New()
-
-	roomList := []string{
-		"대전",
-		"대구",
-		"광주",
-	}
-
-	room.InitMongo("mongodb://127.0.0.1:27017")
-
-	for i := 0; i < len(roomList); i++ {
-		room.CreateRoom(roomList[i])
-	}
 }
 
 // InitMongo 는 몽고DB의 초기 설정을 하는 함수입니다.

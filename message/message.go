@@ -2,14 +2,17 @@ package message
 
 import (
 	"Liature-Server/db"
+	"Liature-Server/room"
 	"Liature-Server/serversession"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/mholt/binding"
 	"github.com/unrolled/render"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -72,7 +75,7 @@ func (m *Message) Create() error {
 }
 
 // RetrieveMessages 는 메시지를 조회합니다.
-func RetrieveMessages(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func RetrieveMessages(w http.ResponseWriter, r *http.Request, ps httprouter.Params) ([]Message, error) {
 	// 몽고DB 세션 생성
 	session := mongoDB.Session.Copy()
 	// 몽고DB 세션을 닫는 코드를 defer로 등록
@@ -86,15 +89,20 @@ func RetrieveMessages(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 	}
 
 	var messages []Message
+
+	a := new(room.Area)
+	errs := binding.Bind(r, a)
+	if errs != nil {
+		log.Println(errs)
+	}
+
 	// _id 역순으로 정렬하여 limit 수만큼 message 조회
 	err = session.DB("test").C("messages").
-		Find(bson.M{"room_id": bson.ObjectIdHex(ps.ByName("id"))}).
+		Find(bson.M{"name": a.Area}).
 		Sort("-_id").Limit(limit).All(&messages)
 	if err != nil {
-		// 오류 발생 시 500 에러 반환
-		renderer.JSON(w, http.StatusInternalServerError, err)
-		return
+		return nil, err
 	}
 	// message 조회 결과 반환
-	renderer.JSON(w, http.StatusOK, messages)
+	return messages, nil
 }

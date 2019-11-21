@@ -108,6 +108,14 @@ func (c *Client) Read() (*message.Message, error) {
 	msg.CreatedAt = time.Now()
 	msg.User = c.User
 
+	if msg.User == nil {
+		msg.User = new(serversession.SessionUser)
+		msg.User.UID = "guest_" + time.Now().Format("2006-01-02-15:04:05")
+		msg.User.Name = "guest"
+		msg.User.Email = "guest@guest.com"
+		msg.User.AvatarURL = "https://cdn.pixabay.com/photo/2016/08/31/11/54/user-1633249_960_720.png"
+	}
+
 	log.Println("read from websocket:", msg)
 
 	// 메시지 정보 반환

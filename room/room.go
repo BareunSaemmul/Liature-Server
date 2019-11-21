@@ -3,8 +3,10 @@ package room
 import (
 	"Liature-Server/db"
 	"fmt"
+	"net/http"
 	"os"
 
+	"github.com/mholt/binding"
 	"github.com/unrolled/render"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -13,6 +15,18 @@ import (
 type Room struct {
 	ID   bson.ObjectId `bson:"_id" json:"id"`
 	Name string        `bson:"name" json:"name"`
+}
+
+// Area 는 방의 이름이 되는 지역정보를 담습니다.
+type Area struct {
+	Area string `bson:"area" json:"area"`
+}
+
+// FieldMap 메서드는 Area 타입을 binding.FieldMapper 인터페이스이도록 하기 위해 만든 메서드입니다.
+func (a *Area) FieldMap(req *http.Request) binding.FieldMap {
+	return binding.FieldMap{
+		&a.Area: "area",
+	}
 }
 
 var (
@@ -46,24 +60,30 @@ func InitMongo(addr string) error {
 }
 
 // CreateRoom 은 받은 이름으로 방을 생성합니다.
-func CreateRoom(roomName string) error {
+func CreateRoom(roomName string) bool {
 	r := new(Room)
 
 	session := mongoDB.Session.Copy()
 	defer session.Close()
 
-	r.ID = bson.NewObjectId()
-	r.Name = roomName
+	roomCheck := new(Room)
 	c := session.DB("test").C("rooms")
+	err := c.Find(bson.M{"name": roomName}).One(&roomCheck)
+	if err != nil {
+		r.ID = bson.NewObjectId()
+		r.Name = roomName
 
-	if err := c.Insert(r); err != nil {
-		return err
+		if err := c.Insert(r); err != nil {
+			return false
+		}
+
+		return true
 	}
-
-	return nil
+	return false
 }
 
-func retrieveRooms() ([]Room, error) {
+// RetrieveRooms 는 모든 room 정보 반환
+func RetrieveRooms() ([]Room, error) {
 	// 몽고DB 세션 생성
 	session := mongoDB.Session.Copy()
 	// 몽고DB 세션을 닫는 코드를 defer로 등록

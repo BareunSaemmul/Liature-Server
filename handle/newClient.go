@@ -23,12 +23,12 @@ var (
 )
 
 // NewClient 는 새로운 클라이언트를 생성합니다.
-func NewClient(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	socket, err := upgrader.Upgrade(w, r, nil)
+func NewClient(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	socket, err := upgrader.Upgrade(w, req, nil)
 	if err != nil {
 		log.Fatal("ServeHTTP:", err)
 		return
 	}
 
-	client.NewClient(socket, ps.ByName("room_id"), serversession.GetCurrentUser(r))
+	client.NewClient(socket, ps.ByName("area"), serversession.GetCurrentUser(req))
 }

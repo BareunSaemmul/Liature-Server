@@ -3,6 +3,7 @@ package server
 import (
 	"Liature-Server/handle"
 	"Liature-Server/message"
+	"Liature-Server/room"
 	"Liature-Server/serversession"
 
 	sessions "github.com/goincremental/negroni-sessions"
@@ -31,18 +32,39 @@ func New() (*Server, error) {
 	store := cookiestore.New([]byte(sessionSecret))
 	sv.neg.Use(sessions.Sessions(sessionKey, store))
 	sv.neg.Use(serversession.LoginRequired("/login", "/"))
+
 	err := handle.InitMongo("mongodb://127.0.0.1:27017")
 	if err != nil {
 		return nil, err
+	}
+	err = message.InitMongo("mongodb://127.0.0.1:27017")
+	if err != nil {
+		return nil, err
+	}
+
+	err = room.InitMongo("mongodb://127.0.0.1:27017")
+	if err != nil {
+		return nil, err
+	}
+
+	roomList := []string{
+		"Dajeon",
+		"Daegu",
+		"Gwangju",
+	}
+
+	for i := 0; i < len(roomList); i++ {
+		room.CreateRoom(roomList[i])
 	}
 
 	sv.router.GET("/", handle.IndexPage)
 
 	sv.router.GET("/login", handle.LoginPage)
 
-	sv.router.GET("/rooms/messages", message.RetrieveMessages)
+	sv.router.GET("/rooms", handle.RetrieveRooms)
+	sv.router.POST("/rooms/messages", handle.RetrieveMessages)
 
-	sv.router.GET("/ws/:room_id", handle.NewClient)
+	sv.router.GET("/ws/room/:area", handle.NewClient)
 
 	//sv.router.POST("/social/google", handle.SocialAuthGoogle)
 	sv.router.GET("/auth/callback/google", handle.SocialAuthGoogle)
